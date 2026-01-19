@@ -121,15 +121,29 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   signInWithNaver: async () => {
     try {
       const clientId = process.env.EXPO_PUBLIC_NAVER_CLIENT_ID;
-      const redirectUri = encodeURIComponent(
-        typeof window !== 'undefined' 
-          ? `${window.location.origin}/auth/callback`
-          : 'http://localhost:8081/auth/callback'
-      );
+      const redirectUri = typeof window !== 'undefined' 
+        ? `${window.location.origin}/auth/callback`
+        : 'http://localhost:8081/auth/callback';
+      const encodedRedirectUri = encodeURIComponent(redirectUri);
       const state = Math.random().toString(36).substring(7);
 
+      // 디버깅 로그
+      console.log('🟢 네이버 로그인 정보:');
+      console.log('  - Client ID:', clientId ? `${clientId.substring(0, 10)}...` : 'undefined');
+      console.log('  - Redirect URI:', redirectUri);
+      console.log('  - Encoded Redirect URI:', encodedRedirectUri);
+      console.log('  - State:', state);
+
+      if (!clientId) {
+        const errorMsg = '네이버 Client ID가 설정되지 않았습니다. .env 파일을 확인하세요.';
+        console.error('❌', errorMsg);
+        return { error: { message: errorMsg } };
+      }
+
       // 네이버 로그인 URL 생성
-      const naverAuthUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}`;
+      const naverAuthUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodedRedirectUri}&state=${state}`;
+
+      console.log('🔗 네이버 로그인 URL:', naverAuthUrl);
 
       // 브라우저에서 네이버 로그인 페이지 열기
       if (typeof window !== 'undefined') {
