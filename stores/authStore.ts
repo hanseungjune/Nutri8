@@ -12,6 +12,7 @@ interface AuthStore extends AuthState {
   signIn: (credentials: LoginCredentials) => Promise<{ error: AuthError | null }>;
   signUp: (credentials: RegisterCredentials) => Promise<{ error: AuthError | null }>;
   signInWithGoogle: () => Promise<{ error: AuthError | null }>;
+  signInWithNaver: () => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
   checkSession: () => Promise<void>;
   setUser: (user: User | null, session: Session | null) => void;
@@ -113,6 +114,33 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     } catch (error: any) {
       console.error('❌ Google 로그인 실패:', error);
       return { error: { message: error.message || 'Google 로그인에 실패했습니다.' } };
+    }
+  },
+
+  // 네이버 로그인
+  signInWithNaver: async () => {
+    try {
+      const clientId = process.env.EXPO_PUBLIC_NAVER_CLIENT_ID;
+      const redirectUri = encodeURIComponent(
+        typeof window !== 'undefined' 
+          ? `${window.location.origin}/auth/callback`
+          : 'http://localhost:8081/auth/callback'
+      );
+      const state = Math.random().toString(36).substring(7);
+
+      // 네이버 로그인 URL 생성
+      const naverAuthUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}`;
+
+      // 브라우저에서 네이버 로그인 페이지 열기
+      if (typeof window !== 'undefined') {
+        window.location.href = naverAuthUrl;
+      }
+
+      console.log('✅ 네이버 로그인 시작');
+      return { error: null };
+    } catch (error: any) {
+      console.error('❌ 네이버 로그인 실패:', error);
+      return { error: { message: error.message || '네이버 로그인에 실패했습니다.' } };
     }
   },
 

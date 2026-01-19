@@ -24,7 +24,7 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const { signIn, signInWithGoogle } = useAuthStore();
+  const { signIn, signInWithGoogle, signInWithNaver } = useAuthStore();
 
   const handleLogin = async () => {
     // 유효성 검증
@@ -74,6 +74,22 @@ export default function LoginScreen() {
       // OAuth는 브라우저에서 처리되므로 여기서는 성공 처리 안 함
     } catch (error: any) {
       Alert.alert('오류', error.message || 'Google 로그인 중 오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleNaverLogin = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await signInWithNaver();
+      
+      if (error) {
+        Alert.alert('로그인 실패', error.message);
+      }
+      // OAuth는 브라우저에서 처리되므로 여기서는 성공 처리 안 함
+    } catch (error: any) {
+      Alert.alert('오류', error.message || '네이버 로그인 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -175,6 +191,16 @@ export default function LoginScreen() {
           >
             <MaterialCommunityIcons name="google" size={24} color="#DB4437" />
             <Text style={styles.googleButtonText}>Google로 로그인</Text>
+          </TouchableOpacity>
+
+          {/* 네이버 로그인 버튼 */}
+          <TouchableOpacity
+            style={[styles.naverButton, isLoading && styles.naverButtonDisabled]}
+            onPress={handleNaverLogin}
+            disabled={isLoading}
+          >
+            <Text style={styles.naverIcon}>N</Text>
+            <Text style={styles.naverButtonText}>네이버로 로그인</Text>
           </TouchableOpacity>
 
           {/* 회원가입 링크 */}
@@ -302,6 +328,29 @@ const styles = StyleSheet.create({
   googleButtonText: {
     fontSize: 16,
     color: '#333',
+    fontWeight: '600',
+  },
+  naverButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#03C75A',
+    height: 56,
+    borderRadius: 12,
+    marginTop: 12,
+    gap: 12,
+  },
+  naverButtonDisabled: {
+    opacity: 0.5,
+  },
+  naverIcon: {
+    fontSize: 24,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  naverButtonText: {
+    fontSize: 16,
+    color: '#fff',
     fontWeight: '600',
   },
 });
