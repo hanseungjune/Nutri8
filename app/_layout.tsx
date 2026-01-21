@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, Platform } from 'react-native';
 import { useAuthStore } from '../stores/authStore';
+import { startWebNotificationChecker } from '../utils/webNotificationUtils';
 
 export default function RootLayout() {
   const router = useRouter();
@@ -13,6 +14,14 @@ export default function RootLayout() {
   useEffect(() => {
     checkSession();
   }, []);
+
+  // 웹에서 알림 체커 시작
+  useEffect(() => {
+    if (Platform.OS === 'web' && isAuthenticated) {
+      console.log('🔔 웹 알림 체커 자동 시작');
+      startWebNotificationChecker();
+    }
+  }, [isAuthenticated]);
 
   // 인증 상태에 따른 라우팅
   useEffect(() => {
