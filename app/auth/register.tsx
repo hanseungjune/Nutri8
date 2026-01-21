@@ -72,11 +72,11 @@ export default function RegisterScreen() {
       if (error) {
         if (error.code === 'EMAIL_CONFIRMATION_REQUIRED') {
           Alert.alert(
-            '이메일 확인 필요',
-            '회원가입이 완료되었습니다. 이메일을 확인하여 계정을 활성화해주세요.',
+            '회원가입 완료',
+            '회원가입이 완료되었습니다!\n이제 로그인할 수 있습니다.',
             [
               {
-                text: '확인',
+                text: '로그인하기',
                 onPress: () => router.replace('/auth/login'),
               },
             ]

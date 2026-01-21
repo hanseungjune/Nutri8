@@ -7,6 +7,19 @@ import { getDatabase } from './database';
 import { supabase } from './supabase';
 
 /**
+ * 현재 로그인한 사용자 ID 가져오기
+ */
+async function getCurrentUserId(): Promise<string> {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  
+  if (error || !user) {
+    throw new Error('사용자 인증이 필요합니다. 다시 로그인해주세요.');
+  }
+  
+  return user.id;
+}
+
+/**
  * Meals 관련 쿼리 (PostgreSQL)
  */
 export const MealQueries = {
@@ -59,193 +72,228 @@ export const MealQueries = {
   },
 
   /**
-   * 날짜별 식단 조회
+   * 날짜별 식단 조회 (현재 사용자만)
    */
-  getByDate: (date: string, onSuccess: (meals: Meal[]) => void, onError?: (error: Error) => void) => {
-    const db = getDatabase();
-    const client = db.getClient();
-    
-    client
-      .from('meals')
-      .select('*')
-      .eq('date', date)
-      .order('created_at', { ascending: false })
-      .then(({ data, error }) => {
-        if (error) {
-          console.error('Failed to get meals:', error);
-          if (onError) onError(error as Error);
-          return;
-        }
-        
-        const meals: Meal[] = (data || []).map((row: any) => ({
-          id: row.id,
-          date: row.date,
-          mealType: row.meal_type,
-          foodName: row.food_name,
-          calories: row.calories,
-          protein: row.protein,
-          carbs: row.carbs,
-          fat: row.fat,
-          photoUrl: row.photo_url, // 사진 URL 추가
-          createdAt: row.created_at,
-        }));
-        
-        console.log(`Loaded ${meals.length} meals for date ${date}`);
-        onSuccess(meals);
-      })
-      .catch((err: Error) => {
-        console.error('Get meals error:', err);
-        if (onError) onError(err);
-      });
+  getByDate: async (date: string, onSuccess: (meals: Meal[]) => void, onError?: (error: Error) => void) => {
+    try {
+      const userId = await getCurrentUserId();
+      const db = getDatabase();
+      const client = db.getClient();
+      
+      client
+        .from('meals')
+        .select('*')
+        .eq('user_id', userId) // 🔒 사용자 필터 추가!
+        .eq('date', date)
+        .order('created_at', { ascending: false })
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Failed to get meals:', error);
+            if (onError) onError(error as Error);
+            return;
+          }
+          
+          const meals: Meal[] = (data || []).map((row: any) => ({
+            id: row.id,
+            date: row.date,
+            mealType: row.meal_type,
+            foodName: row.food_name,
+            calories: row.calories,
+            protein: row.protein,
+            carbs: row.carbs,
+            fat: row.fat,
+            photoUrl: row.photo_url,
+            createdAt: row.created_at,
+          }));
+          
+          console.log(`✅ Loaded ${meals.length} meals for user ${userId} on ${date}`);
+          onSuccess(meals);
+        })
+        .catch((err: Error) => {
+          console.error('Get meals error:', err);
+          if (onError) onError(err);
+        });
+    } catch (err) {
+      console.error('Authentication error:', err);
+      if (onError) onError(err as Error);
+    }
   },
 
   /**
-   * 모든 식단 조회
+   * 모든 식단 조회 (현재 사용자만)
    */
-  getAll: (onSuccess: (meals: Meal[]) => void, onError?: (error: Error) => void) => {
-    const db = getDatabase();
-    const client = db.getClient();
-    
-    client
-      .from('meals')
-      .select('*')
-      .order('date', { ascending: false })
-      .order('created_at', { ascending: false })
-      .then(({ data, error }) => {
-        if (error) {
-          console.error('Failed to get all meals:', error);
-          if (onError) onError(error as Error);
-          return;
-        }
-        
-        const meals: Meal[] = (data || []).map((row: any) => ({
-          id: row.id,
-          date: row.date,
-          mealType: row.meal_type,
-          foodName: row.food_name,
-          calories: row.calories,
-          protein: row.protein,
-          carbs: row.carbs,
-          fat: row.fat,
-          photoUrl: row.photo_url, // 사진 URL 추가
-          createdAt: row.created_at,
-        }));
-        
-        console.log(`Loaded ${meals.length} total meals`);
-        onSuccess(meals);
-      })
-      .catch((err: Error) => {
-        console.error('Get all meals error:', err);
-        if (onError) onError(err);
-      });
+  getAll: async (onSuccess: (meals: Meal[]) => void, onError?: (error: Error) => void) => {
+    try {
+      const userId = await getCurrentUserId();
+      const db = getDatabase();
+      const client = db.getClient();
+      
+      client
+        .from('meals')
+        .select('*')
+        .eq('user_id', userId) // 🔒 사용자 필터 추가!
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false })
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Failed to get all meals:', error);
+            if (onError) onError(error as Error);
+            return;
+          }
+          
+          const meals: Meal[] = (data || []).map((row: any) => ({
+            id: row.id,
+            date: row.date,
+            mealType: row.meal_type,
+            foodName: row.food_name,
+            calories: row.calories,
+            protein: row.protein,
+            carbs: row.carbs,
+            fat: row.fat,
+            photoUrl: row.photo_url,
+            createdAt: row.created_at,
+          }));
+          
+          console.log(`✅ Loaded ${meals.length} total meals for user ${userId}`);
+          onSuccess(meals);
+        })
+        .catch((err: Error) => {
+          console.error('Get all meals error:', err);
+          if (onError) onError(err);
+        });
+    } catch (err) {
+      console.error('Authentication error:', err);
+      if (onError) onError(err as Error);
+    }
   },
 
   /**
-   * 식단 수정
+   * 식단 수정 (본인 데이터만)
    */
-  update: (id: number, meal: Partial<Meal>, onSuccess: () => void, onError?: (error: Error) => void) => {
-    const db = getDatabase();
-    const client = db.getClient();
-    
-    const updateData: any = {};
-    if (meal.foodName !== undefined) updateData.food_name = meal.foodName;
-    if (meal.calories !== undefined) updateData.calories = meal.calories;
-    if (meal.protein !== undefined) updateData.protein = meal.protein;
-    if (meal.carbs !== undefined) updateData.carbs = meal.carbs;
-    if (meal.fat !== undefined) updateData.fat = meal.fat;
-    if (meal.photoUrl !== undefined) updateData.photo_url = meal.photoUrl; // 사진 URL 추가
-    
-    client
-      .from('meals')
-      .update(updateData)
-      .eq('id', id)
-      .then(({ error }) => {
-        if (error) {
-          console.error('Failed to update meal:', error);
-          if (onError) onError(error as Error);
-          return;
-        }
-        console.log(`Meal ${id} updated successfully`);
-        onSuccess();
-      })
-      .catch((err: Error) => {
-        console.error('Update meal error:', err);
-        if (onError) onError(err);
-      });
+  update: async (id: number, meal: Partial<Meal>, onSuccess: () => void, onError?: (error: Error) => void) => {
+    try {
+      const userId = await getCurrentUserId();
+      const db = getDatabase();
+      const client = db.getClient();
+      
+      const updateData: any = {};
+      if (meal.foodName !== undefined) updateData.food_name = meal.foodName;
+      if (meal.calories !== undefined) updateData.calories = meal.calories;
+      if (meal.protein !== undefined) updateData.protein = meal.protein;
+      if (meal.carbs !== undefined) updateData.carbs = meal.carbs;
+      if (meal.fat !== undefined) updateData.fat = meal.fat;
+      if (meal.photoUrl !== undefined) updateData.photo_url = meal.photoUrl;
+      
+      client
+        .from('meals')
+        .update(updateData)
+        .eq('id', id)
+        .eq('user_id', userId) // 🔒 본인 데이터만 수정 가능!
+        .then(({ error }) => {
+          if (error) {
+            console.error('Failed to update meal:', error);
+            if (onError) onError(error as Error);
+            return;
+          }
+          console.log(`✅ Meal ${id} updated successfully for user ${userId}`);
+          onSuccess();
+        })
+        .catch((err: Error) => {
+          console.error('Update meal error:', err);
+          if (onError) onError(err);
+        });
+    } catch (err) {
+      console.error('Authentication error:', err);
+      if (onError) onError(err as Error);
+    }
   },
 
   /**
-   * 식단 삭제
+   * 식단 삭제 (본인 데이터만)
    */
-  delete: (id: number, onSuccess: () => void, onError?: (error: Error) => void) => {
-    const db = getDatabase();
-    const client = db.getClient();
-    
-    client
-      .from('meals')
-      .delete()
-      .eq('id', id)
-      .then(({ error }) => {
-        if (error) {
-          console.error('Failed to delete meal:', error);
-          if (onError) onError(error as Error);
-          return;
-        }
-        console.log(`Meal ${id} deleted successfully`);
-        onSuccess();
-      })
-      .catch((err: Error) => {
-        console.error('Delete meal error:', err);
-        if (onError) onError(err);
-      });
+  delete: async (id: number, onSuccess: () => void, onError?: (error: Error) => void) => {
+    try {
+      const userId = await getCurrentUserId();
+      const db = getDatabase();
+      const client = db.getClient();
+      
+      client
+        .from('meals')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', userId) // 🔒 본인 데이터만 삭제 가능!
+        .then(({ error }) => {
+          if (error) {
+            console.error('Failed to delete meal:', error);
+            if (onError) onError(error as Error);
+            return;
+          }
+          console.log(`✅ Meal ${id} deleted successfully for user ${userId}`);
+          onSuccess();
+        })
+        .catch((err: Error) => {
+          console.error('Delete meal error:', err);
+          if (onError) onError(err);
+        });
+    } catch (err) {
+      console.error('Authentication error:', err);
+      if (onError) onError(err as Error);
+    }
   },
 
   /**
-   * 날짜 범위별 식단 조회
+   * 날짜 범위별 식단 조회 (현재 사용자만)
    */
-  getByDateRange: (
+  getByDateRange: async (
     startDate: string,
     endDate: string,
     onSuccess: (meals: Meal[]) => void,
     onError?: (error: Error) => void
   ) => {
-    const db = getDatabase();
-    const client = db.getClient();
-    
-    client
-      .from('meals')
-      .select('*')
-      .gte('date', startDate)
-      .lte('date', endDate)
-      .order('date', { ascending: false })
-      .order('created_at', { ascending: false })
-      .then(({ data, error }) => {
-        if (error) {
-          console.error('Failed to get meals by date range:', error);
-          if (onError) onError(error as Error);
-          return;
-        }
-        
-        const meals: Meal[] = (data || []).map((row: any) => ({
-          id: row.id,
-          date: row.date,
-          mealType: row.meal_type,
-          foodName: row.food_name,
-          calories: row.calories,
-          protein: row.protein,
-          carbs: row.carbs,
-          fat: row.fat,
-          photoUrl: row.photo_url, // 사진 URL 추가
-          createdAt: row.created_at,
-        }));
-        
-        console.log(`Loaded ${meals.length} meals for date range ${startDate} ~ ${endDate}`);
-        onSuccess(meals);
-      })
-      .catch((err: Error) => {
-        console.error('Get meals by date range error:', err);
-        if (onError) onError(err);
-      });
+    try {
+      const userId = await getCurrentUserId();
+      const db = getDatabase();
+      const client = db.getClient();
+      
+      client
+        .from('meals')
+        .select('*')
+        .eq('user_id', userId) // 🔒 사용자 필터 추가!
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false })
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Failed to get meals by date range:', error);
+            if (onError) onError(error as Error);
+            return;
+          }
+          
+          const meals: Meal[] = (data || []).map((row: any) => ({
+            id: row.id,
+            date: row.date,
+            mealType: row.meal_type,
+            foodName: row.food_name,
+            calories: row.calories,
+            protein: row.protein,
+            carbs: row.carbs,
+            fat: row.fat,
+            photoUrl: row.photo_url,
+            createdAt: row.created_at,
+          }));
+          
+          console.log(`✅ Loaded ${meals.length} meals for user ${userId} (${startDate} ~ ${endDate})`);
+          onSuccess(meals);
+        })
+        .catch((err: Error) => {
+          console.error('Get meals by date range error:', err);
+          if (onError) onError(err);
+        });
+    } catch (err) {
+      console.error('Authentication error:', err);
+      if (onError) onError(err as Error);
+    }
   },
 };
 
@@ -254,52 +302,59 @@ export const MealQueries = {
  */
 export const GoalQueries = {
   /**
-   * 현재 목표 조회
+   * 현재 목표 조회 (현재 사용자만)
    */
-  getCurrent: (onSuccess: (goal: Goal | null) => void, onError?: (error: Error) => void) => {
-    const db = getDatabase();
-    const client = db.getClient();
-    
-    client
-      .from('goals')
-      .select('*')
-      .or('end_date.is.null,end_date.gte.' + new Date().toISOString().split('T')[0])
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single()
-      .then(({ data, error }) => {
-        if (error) {
-          if (error.code === 'PGRST116') {
-            // No rows found
-            console.log('No current goal found');
+  getCurrent: async (onSuccess: (goal: Goal | null) => void, onError?: (error: Error) => void) => {
+    try {
+      const userId = await getCurrentUserId();
+      const db = getDatabase();
+      const client = db.getClient();
+      
+      client
+        .from('goals')
+        .select('*')
+        .eq('user_id', userId) // 🔒 사용자 필터 추가!
+        .or('end_date.is.null,end_date.gte.' + new Date().toISOString().split('T')[0])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+        .then(({ data, error }) => {
+          if (error) {
+            if (error.code === 'PGRST116') {
+              // No rows found
+              console.log(`No current goal found for user ${userId}`);
+              onSuccess(null);
+              return;
+            }
+            console.error('Failed to get current goal:', error);
+            if (onError) onError(error as Error);
+            return;
+          }
+          
+          if (!data) {
             onSuccess(null);
             return;
           }
-          console.error('Failed to get current goal:', error);
-          if (onError) onError(error as Error);
-          return;
-        }
-        
-        if (!data) {
+          
+          const goal: Goal = {
+            id: data.id,
+            user_id: data.user_id,
+            targetWeight: data.target_weight,
+            targetCalories: data.target_calories,
+            startDate: data.start_date,
+            endDate: data.end_date,
+          };
+          console.log(`✅ Current goal loaded for user ${userId}:`, goal);
+          onSuccess(goal);
+        })
+        .catch((err: Error) => {
+          console.error('Get current goal error:', err);
           onSuccess(null);
-          return;
-        }
-        
-        const goal: Goal = {
-          id: data.id,
-          user_id: data.user_id,
-          targetWeight: data.target_weight,
-          targetCalories: data.target_calories,
-          startDate: data.start_date,
-          endDate: data.end_date,
-        };
-        console.log('Current goal loaded:', goal);
-        onSuccess(goal);
-      })
-      .catch((err: Error) => {
-        console.error('Get current goal error:', err);
-        onSuccess(null);
-      });
+        });
+    } catch (err) {
+      console.error('Authentication error:', err);
+      if (onError) onError(err as Error);
+    }
   },
 
   /**
@@ -347,34 +402,41 @@ export const GoalQueries = {
   },
 
   /**
-   * 목표 수정
+   * 목표 수정 (본인 데이터만)
    */
-  update: (id: number, goal: Partial<Goal>, onSuccess: () => void, onError?: (error: Error) => void) => {
-    const db = getDatabase();
-    const client = db.getClient();
-    
-    const updateData: any = {};
-    if (goal.targetWeight !== undefined) updateData.target_weight = goal.targetWeight;
-    if (goal.targetCalories !== undefined) updateData.target_calories = goal.targetCalories;
-    if (goal.endDate !== undefined) updateData.end_date = goal.endDate;
-    
-    client
-      .from('goals')
-      .update(updateData)
-      .eq('id', id)
-      .then(({ error }) => {
-        if (error) {
-          console.error('Failed to update goal:', error);
-          if (onError) onError(error as Error);
-          return;
-        }
-        console.log(`Goal ${id} updated successfully`);
-        onSuccess();
-      })
-      .catch((err: Error) => {
-        console.error('Update goal error:', err);
-        if (onError) onError(err);
-      });
+  update: async (id: number, goal: Partial<Goal>, onSuccess: () => void, onError?: (error: Error) => void) => {
+    try {
+      const userId = await getCurrentUserId();
+      const db = getDatabase();
+      const client = db.getClient();
+      
+      const updateData: any = {};
+      if (goal.targetWeight !== undefined) updateData.target_weight = goal.targetWeight;
+      if (goal.targetCalories !== undefined) updateData.target_calories = goal.targetCalories;
+      if (goal.endDate !== undefined) updateData.end_date = goal.endDate;
+      
+      client
+        .from('goals')
+        .update(updateData)
+        .eq('id', id)
+        .eq('user_id', userId) // 🔒 본인 데이터만 수정 가능!
+        .then(({ error }) => {
+          if (error) {
+            console.error('Failed to update goal:', error);
+            if (onError) onError(error as Error);
+            return;
+          }
+          console.log(`✅ Goal ${id} updated successfully for user ${userId}`);
+          onSuccess();
+        })
+        .catch((err: Error) => {
+          console.error('Update goal error:', err);
+          if (onError) onError(err);
+        });
+    } catch (err) {
+      console.error('Authentication error:', err);
+      if (onError) onError(err as Error);
+    }
   },
 };
 
@@ -425,44 +487,51 @@ export const WeightRecordQueries = {
   },
 
   /**
-   * 기간별 체중 기록 조회
+   * 기간별 체중 기록 조회 (현재 사용자만)
    */
-  getByDateRange: (
+  getByDateRange: async (
     startDate: string,
     endDate: string,
     onSuccess: (records: WeightRecord[]) => void,
     onError?: (error: Error) => void
   ) => {
-    const db = getDatabase();
-    const client = db.getClient();
-    
-    client
-      .from('weight_records')
-      .select('*')
-      .gte('date', startDate)
-      .lte('date', endDate)
-      .order('date', { ascending: true })
-      .then(({ data, error }) => {
-        if (error) {
-          console.error('Failed to get weight records:', error);
-          if (onError) onError(error as Error);
-          return;
-        }
-        
-        const records: WeightRecord[] = (data || []).map((row: any) => ({
-          id: row.id,
-          date: row.date,
-          weight: row.weight,
-          createdAt: row.created_at,
-        }));
-        
-        console.log(`Loaded ${records.length} weight records for date range ${startDate} ~ ${endDate}`);
-        onSuccess(records);
-      })
-      .catch((err: Error) => {
-        console.error('Get weight records error:', err);
-        if (onError) onError(err);
-      });
+    try {
+      const userId = await getCurrentUserId();
+      const db = getDatabase();
+      const client = db.getClient();
+      
+      client
+        .from('weight_records')
+        .select('*')
+        .eq('user_id', userId) // 🔒 사용자 필터 추가!
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .order('date', { ascending: true })
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Failed to get weight records:', error);
+            if (onError) onError(error as Error);
+            return;
+          }
+          
+          const records: WeightRecord[] = (data || []).map((row: any) => ({
+            id: row.id,
+            date: row.date,
+            weight: row.weight,
+            createdAt: row.created_at,
+          }));
+          
+          console.log(`✅ Loaded ${records.length} weight records for user ${userId} (${startDate} ~ ${endDate})`);
+          onSuccess(records);
+        })
+        .catch((err: Error) => {
+          console.error('Get weight records error:', err);
+          if (onError) onError(err);
+        });
+    } catch (err) {
+      console.error('Authentication error:', err);
+      if (onError) onError(err as Error);
+    }
   },
 
   /**

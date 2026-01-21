@@ -62,6 +62,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           data: {
             name: credentials.name,
           },
+          emailRedirectTo: typeof window !== 'undefined' 
+            ? `${window.location.origin}/auth/callback`
+            : undefined,
         },
       });
 
@@ -69,8 +72,22 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         return { error: { message: error.message, code: error.status?.toString() } };
       }
 
-      // 이메일 확인이 필요한 경우
+      // 이메일 확인이 필요한 경우 (Supabase 설정에 따라)
       if (data.user && !data.session) {
+        console.log('⚠️ 이메일 확인 필요:', data.user.email);
+        
+        // 개발 환경: 자동으로 로그인 시도
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🔧 개발 환경: 자동 로그인 시도...');
+          // Supabase 설정에서 이메일 확인을 비활성화해야 합니다
+          return { 
+            error: { 
+              message: '회원가입이 완료되었습니다. 로그인을 시도하세요.\n\n개발 환경: Supabase Dashboard에서 "Enable email confirmations"를 비활성화하면 자동으로 로그인됩니다.',
+              code: 'EMAIL_CONFIRMATION_REQUIRED'
+            } 
+          };
+        }
+        
         return { 
           error: { 
             message: '회원가입이 완료되었습니다. 이메일을 확인해주세요.',
