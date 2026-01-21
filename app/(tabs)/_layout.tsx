@@ -8,18 +8,19 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: '#4CAF50',
         tabBarInactiveTintColor: '#757575',
+        tabBarShowLabel: Platform.OS === 'web' ? true : false, // 모바일에서는 텍스트 숨김
         tabBarLabelStyle: {
           fontSize: Platform.OS === 'web' ? 11 : 9,
           marginBottom: Platform.OS === 'web' ? 2 : 0,
           marginTop: Platform.OS === 'web' ? 0 : -2,
         },
         tabBarIconStyle: {
-          marginTop: Platform.OS === 'web' ? 0 : 2,
+          marginTop: Platform.OS === 'web' ? 0 : 0,
         },
         tabBarStyle: {
-          height: Platform.OS === 'web' ? 60 : 65,
-          paddingBottom: Platform.OS === 'web' ? 5 : 8,
-          paddingTop: Platform.OS === 'web' ? 5 : 8,
+          height: Platform.OS === 'web' ? 60 : 60,
+          paddingBottom: Platform.OS === 'web' ? 5 : 5,
+          paddingTop: Platform.OS === 'web' ? 5 : 5,
         },
         headerStyle: {
           backgroundColor: '#4CAF50',
