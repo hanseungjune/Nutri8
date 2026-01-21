@@ -20,8 +20,10 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
  */
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    persistSession: true,
-    autoRefreshToken: true,
+    persistSession: true,      // 세션을 로컬 스토리지에 저장
+    autoRefreshToken: true,    // 토큰 자동 갱신
+    detectSessionInUrl: true,  // URL에서 세션 감지 (OAuth)
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined, // 웹: localStorage 사용
   },
 });
 

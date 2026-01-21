@@ -45,6 +45,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       });
 
       console.log('✅ 로그인 성공:', data.user?.email);
+      console.log('💾 세션 자동 저장됨 - 다음에 앱을 열면 자동 로그인됩니다!');
+      console.log('⏰ 세션 만료:', new Date(data.session?.expires_at! * 1000).toLocaleString('ko-KR'));
       return { error: null };
     } catch (error: any) {
       console.error('❌ 로그인 실패:', error);
@@ -104,6 +106,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       });
 
       console.log('✅ 회원가입 성공:', data.user?.email);
+      if (data.session) {
+        console.log('💾 세션 자동 저장됨 - 다음에 앱을 열면 자동 로그인됩니다!');
+        console.log('⏰ 세션 만료:', new Date(data.session?.expires_at! * 1000).toLocaleString('ko-KR'));
+      }
       return { error: null };
     } catch (error: any) {
       console.error('❌ 회원가입 실패:', error);
@@ -197,15 +203,16 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
   },
 
-  // 세션 확인
+  // 세션 확인 및 복구
   checkSession: async () => {
     try {
       set({ isLoading: true });
+      console.log('🔍 저장된 세션 확인 중...');
 
       const { data: { session }, error } = await supabase.auth.getSession();
 
       if (error) {
-        console.error('세션 확인 에러:', error);
+        console.error('❌ 세션 확인 에러:', error);
         set({
           user: null,
           session: null,
@@ -215,14 +222,20 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         return;
       }
 
+      if (session) {
+        console.log('✅ 저장된 세션 발견! 자동 로그인됨');
+        console.log('👤 사용자:', session.user.email);
+        console.log('⏰ 만료 시간:', new Date(session.expires_at! * 1000).toLocaleString('ko-KR'));
+      } else {
+        console.log('ℹ️ 저장된 세션 없음 - 로그인 필요');
+      }
+
       set({
         user: session?.user ?? null,
         session: session,
         isAuthenticated: !!session,
         isLoading: false,
       });
-
-      console.log('✅ 세션 확인:', session ? '로그인됨' : '로그인 안됨');
     } catch (error) {
       console.error('❌ 세션 확인 실패:', error);
       set({

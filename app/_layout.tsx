@@ -10,8 +10,9 @@ export default function RootLayout() {
   const segments = useSegments();
   const { isAuthenticated, isLoading, checkSession } = useAuthStore();
 
-  // 앱 시작 시 세션 확인
+  // 앱 시작 시 세션 확인 및 복구
   useEffect(() => {
+    console.log('🔐 앱 시작: 저장된 세션 확인 중...');
     checkSession();
   }, []);
 
