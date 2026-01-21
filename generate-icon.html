@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Nutri8 Icon Generator</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 40px;
+            background: #f5f5f5;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .preview {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        #icon-canvas {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .instructions {
+            max-width: 600px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: #4CAF50;
+        }
+        .instructions ol {
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🍎 Nutri8 아이콘 생성기</h1>
+    
+    <div class="preview">
+        <canvas id="icon-canvas" width="512" height="512"></canvas>
+    </div>
+    
+    <button onclick="downloadIcon('icon.png')">📥 icon.png 다운로드</button>
+    <button onclick="downloadIcon('icon-192.png', 192)">📥 icon-192.png 다운로드</button>
+    <button onclick="downloadIcon('icon-512.png', 512)">📥 icon-512.png 다운로드</button>
+    <button onclick="downloadIcon('favicon.png', 32)">📥 favicon.png 다운로드</button>
+    
+    <div class="instructions">
+        <h3>📋 사용 방법</h3>
+        <ol>
+            <li>위의 버튼들을 클릭하여 모든 아이콘 다운로드</li>
+            <li><code>assets/</code> 폴더에 icon.png 복사</li>
+            <li><code>public/</code> 폴더에 모든 파일 복사</li>
+            <li><code>npm start</code>로 앱 재시작</li>
+            <li><code>npx expo export --platform web</code>로 빌드</li>
+            <li>Vercel에 배포</li>
+        </ol>
+    </div>
+
+    <script>
+        // Material Design Icons의 food-apple SVG 경로
+        const appleIconPath = "M12,3A2,2 0 0,1 14,5A2,2 0 0,1 12,7A2,2 0 0,1 10,5A2,2 0 0,1 12,3M12,9C13.54,9.17 15,9.5 16.5,10C16.18,10.5 16,11.22 16,12A5,5 0 0,1 11,17V19H9V17A5,5 0 0,1 4,12C4,11.22 3.82,10.5 3.5,10C5,9.5 6.46,9.17 8,9L8,10.5A1.5,1.5 0 0,0 9.5,12A1.5,1.5 0 0,0 11,10.5V9L12,9M7.5,21A1.5,1.5 0 0,0 9,19.5A1.5,1.5 0 0,0 7.5,18A1.5,1.5 0 0,0 6,19.5A1.5,1.5 0 0,0 7.5,21M16.5,21A1.5,1.5 0 0,0 18,19.5A1.5,1.5 0 0,0 16.5,18A1.5,1.5 0 0,0 15,19.5A1.5,1.5 0 0,0 16.5,21Z";
+        
+        function drawIcon(size = 512) {
+            const canvas = document.getElementById('icon-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 캔버스 크기 설정
+            canvas.width = size;
+            canvas.height = size;
+            
+            // 배경색 (녹색)
+            ctx.fillStyle = '#4CAF50';
+            ctx.fillRect(0, 0, size, size);
+            
+            // 아이콘 그리기 (흰색)
+            ctx.fillStyle = '#FFFFFF';
+            
+            // SVG 경로를 캔버스 경로로 변환
+            const scale = size / 24; // Material Icons는 24x24 기준
+            const offsetX = 0;
+            const offsetY = 0;
+            
+            ctx.save();
+            ctx.translate(offsetX, offsetY);
+            ctx.scale(scale, scale);
+            
+            // Path2D를 사용하여 SVG 경로 그리기
+            const path = new Path2D(appleIconPath);
+            ctx.fill(path);
+            
+            ctx.restore();
+        }
+        
+        function downloadIcon(filename, size = 512) {
+            // 새 캔버스 생성
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = size;
+            tempCanvas.height = size;
+            const ctx = tempCanvas.getContext('2d');
+            
+            // 배경색
+            ctx.fillStyle = '#4CAF50';
+            ctx.fillRect(0, 0, size, size);
+            
+            // 아이콘
+            ctx.fillStyle = '#FFFFFF';
+            const scale = size / 24;
+            ctx.save();
+            ctx.scale(scale, scale);
+            const path = new Path2D(appleIconPath);
+            ctx.fill(path);
+            ctx.restore();
+            
+            // 다운로드
+            tempCanvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+        
+        // 페이지 로드 시 아이콘 그리기
+        window.onload = function() {
+            drawIcon();
+        };
+    </script>
+</body>
+</html>
