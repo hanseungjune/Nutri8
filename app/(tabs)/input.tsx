@@ -372,6 +372,10 @@ export default function InputScreen() {
         () => {
           resetForm();
           alert('식단이 등록되었습니다!');
+          // 홈 화면으로 이동
+          setTimeout(() => {
+            navigation.navigate('index' as never);
+          }, 100);
         },
         (error) => {
           setIsSubmitting(false);

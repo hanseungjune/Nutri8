@@ -171,17 +171,31 @@ export default function StatsScreen() {
         <View style={styles.chartCard}>
           <Text style={styles.cardTitle}>이번 주 영양소 비율</Text>
           {nutrientsData.length > 0 && nutrientsData.some(d => d.population > 0) ? (
-            <PieChart
-              data={nutrientsData}
-              width={screenWidth - 60}
-              height={220}
-              chartConfig={chartConfig}
-              accessor="population"
-              backgroundColor="transparent"
-              paddingLeft="15"
-              absolute
-              style={styles.chart}
-            />
+            <>
+              <PieChart
+                data={nutrientsData}
+                width={screenWidth - 60}
+                height={200}
+                chartConfig={chartConfig}
+                accessor="population"
+                backgroundColor="transparent"
+                paddingLeft="15"
+                absolute
+                hasLegend={false}
+                style={styles.chart}
+              />
+              {/* 커스텀 범례 */}
+              <View style={styles.legendContainer}>
+                {nutrientsData.map((item, index) => (
+                  <View key={index} style={styles.legendItem}>
+                    <View style={[styles.legendColor, { backgroundColor: item.color }]} />
+                    <Text style={styles.legendText}>
+                      {item.name}: <Text style={styles.legendValue}>{item.population.toFixed(1)}g</Text>
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </>
           ) : (
             <View style={styles.emptyChart}>
               <Text style={styles.emptyText}>영양소 데이터가 없습니다</Text>
@@ -329,6 +343,32 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  legendContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  legendColor: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  legendText: {
+    fontSize: 13,
+    color: '#666',
+  },
+  legendValue: {
     fontWeight: 'bold',
     color: '#333',
   },

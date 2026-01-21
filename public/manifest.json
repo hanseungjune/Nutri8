@@ -1,0 +1,43 @@
+{
+  "name": "Nutri8 - 스마트 식단 관리",
+  "short_name": "Nutri8",
+  "description": "칼로리 추적 및 영양소 관리를 위한 스마트 다이어트 앱",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4CAF50",
+  "orientation": "portrait",
+  "lang": "ko",
+  "dir": "auto",
+  "icons": [
+    {
+      "src": "/assets/icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "식단 입력",
+      "short_name": "입력",
+      "description": "새로운 식단 기록하기",
+      "url": "/(tabs)/input",
+      "icons": [{ "src": "/assets/icon.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "히스토리",
+      "short_name": "기록",
+      "description": "식단 기록 확인",
+      "url": "/(tabs)/history",
+      "icons": [{ "src": "/assets/icon.png", "sizes": "96x96" }]
+    }
+  ]
+}

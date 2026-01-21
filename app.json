@@ -30,7 +30,19 @@
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "bundler": "metro"
+      "bundler": "metro",
+      "name": "Nutri8",
+      "shortName": "Nutri8",
+      "lang": "ko",
+      "scope": "/",
+      "themeColor": "#4CAF50",
+      "description": "스마트 식단 관리 및 칼로리 추적 앱",
+      "dir": "auto",
+      "display": "standalone",
+      "startUrl": "/",
+      "orientation": "portrait",
+      "backgroundColor": "#ffffff",
+      "preferRelatedApplications": false
     },
     "plugins": [
       "expo-router",
