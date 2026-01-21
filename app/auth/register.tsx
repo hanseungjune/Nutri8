@@ -28,7 +28,7 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const { signUp, signInWithGoogle } = useAuthStore();
+  const { signUp } = useAuthStore();
 
   const handleRegister = async () => {
     // 유효성 검증
@@ -99,22 +99,6 @@ export default function RegisterScreen() {
       }
     } catch (error: any) {
       Alert.alert('오류', error.message || '회원가입 중 오류가 발생했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleSignUp = async () => {
-    setIsLoading(true);
-    try {
-      const { error } = await signInWithGoogle();
-      
-      if (error) {
-        Alert.alert('로그인 실패', error.message);
-      }
-      // OAuth는 브라우저에서 처리되므로 여기서는 성공 처리 안 함
-    } catch (error: any) {
-      Alert.alert('오류', error.message || 'Google 로그인 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -249,23 +233,6 @@ export default function RegisterScreen() {
               )}
             </TouchableOpacity>
 
-            {/* 구분선 */}
-            <View style={styles.dividerContainer}>
-              <View style={styles.divider} />
-              <Text style={styles.dividerText}>또는</Text>
-              <View style={styles.divider} />
-            </View>
-
-            {/* Google 회원가입 버튼 */}
-            <TouchableOpacity
-              style={[styles.googleButton, isLoading && styles.googleButtonDisabled]}
-              onPress={handleGoogleSignUp}
-              disabled={isLoading}
-            >
-              <MaterialCommunityIcons name="google" size={24} color="#DB4437" />
-              <Text style={styles.googleButtonText}>Google로 계속하기</Text>
-            </TouchableOpacity>
-
             {/* 로그인 링크 */}
             <View style={styles.loginContainer}>
               <Text style={styles.loginText}>이미 계정이 있으신가요? </Text>
@@ -361,41 +328,6 @@ const styles = StyleSheet.create({
   loginLink: {
     fontSize: 16,
     color: '#4CAF50',
-    fontWeight: '600',
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#e0e0e0',
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    fontSize: 14,
-    color: '#999',
-  },
-  googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-    height: 56,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    gap: 12,
-    marginBottom: 16,
-  },
-  googleButtonDisabled: {
-    opacity: 0.5,
-  },
-  googleButtonText: {
-    fontSize: 16,
-    color: '#333',
     fontWeight: '600',
   },
 });

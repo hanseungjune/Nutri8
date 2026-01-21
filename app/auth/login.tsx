@@ -24,7 +24,7 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const { signIn, signInWithGoogle, signInWithNaver } = useAuthStore();
+  const { signIn } = useAuthStore();
 
   const handleLogin = async () => {
     // 유효성 검증
@@ -58,38 +58,6 @@ export default function LoginScreen() {
       }
     } catch (error: any) {
       Alert.alert('오류', error.message || '로그인 중 오류가 발생했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    try {
-      const { error } = await signInWithGoogle();
-      
-      if (error) {
-        Alert.alert('로그인 실패', error.message);
-      }
-      // OAuth는 브라우저에서 처리되므로 여기서는 성공 처리 안 함
-    } catch (error: any) {
-      Alert.alert('오류', error.message || 'Google 로그인 중 오류가 발생했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleNaverLogin = async () => {
-    setIsLoading(true);
-    try {
-      const { error } = await signInWithNaver();
-      
-      if (error) {
-        Alert.alert('로그인 실패', error.message);
-      }
-      // OAuth는 브라우저에서 처리되므로 여기서는 성공 처리 안 함
-    } catch (error: any) {
-      Alert.alert('오류', error.message || '네이버 로그인 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -174,33 +142,6 @@ export default function LoginScreen() {
             ) : (
               <Text style={styles.loginButtonText}>로그인</Text>
             )}
-          </TouchableOpacity>
-
-          {/* 구분선 */}
-          <View style={styles.dividerContainer}>
-            <View style={styles.divider} />
-            <Text style={styles.dividerText}>또는</Text>
-            <View style={styles.divider} />
-          </View>
-
-          {/* Google 로그인 버튼 */}
-          <TouchableOpacity
-            style={[styles.googleButton, isLoading && styles.googleButtonDisabled]}
-            onPress={handleGoogleLogin}
-            disabled={isLoading}
-          >
-            <MaterialCommunityIcons name="google" size={24} color="#DB4437" />
-            <Text style={styles.googleButtonText}>Google로 로그인</Text>
-          </TouchableOpacity>
-
-          {/* 네이버 로그인 버튼 */}
-          <TouchableOpacity
-            style={[styles.naverButton, isLoading && styles.naverButtonDisabled]}
-            onPress={handleNaverLogin}
-            disabled={isLoading}
-          >
-            <Text style={styles.naverIcon}>N</Text>
-            <Text style={styles.naverButtonText}>네이버로 로그인</Text>
           </TouchableOpacity>
 
           {/* 회원가입 링크 */}
@@ -294,63 +235,6 @@ const styles = StyleSheet.create({
   registerLink: {
     fontSize: 16,
     color: '#4CAF50',
-    fontWeight: '600',
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#e0e0e0',
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    fontSize: 14,
-    color: '#999',
-  },
-  googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-    height: 56,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    gap: 12,
-  },
-  googleButtonDisabled: {
-    opacity: 0.5,
-  },
-  googleButtonText: {
-    fontSize: 16,
-    color: '#333',
-    fontWeight: '600',
-  },
-  naverButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#03C75A',
-    height: 56,
-    borderRadius: 12,
-    marginTop: 12,
-    gap: 12,
-  },
-  naverButtonDisabled: {
-    opacity: 0.5,
-  },
-  naverIcon: {
-    fontSize: 24,
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  naverButtonText: {
-    fontSize: 16,
-    color: '#fff',
     fontWeight: '600',
   },
 });
