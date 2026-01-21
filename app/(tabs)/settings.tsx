@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, Platform } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useGoalStore } from '../../stores/goalStore';
@@ -112,35 +112,66 @@ export default function SettingsScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      '로그아웃',
-      '정말 로그아웃하시겠습니까?',
-      [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '로그아웃',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // 1. Supabase 로그아웃
-              await signOut();
-              
-              // 2. 모든 스토어 초기화
-              resetMeal();
-              resetGoal();
-              
-              console.log('✅ 로그아웃 완료, 로그인 화면으로 이동');
-              
-              // 3. 로그인 화면으로 이동
-              router.replace('/auth/login');
-            } catch (error) {
-              console.error('❌ 로그아웃 처리 실패:', error);
-              Alert.alert('오류', '로그아웃 중 문제가 발생했습니다.');
-            }
+    const confirmMessage = '정말 로그아웃하시겠습니까?';
+    
+    // 웹에서는 confirm 사용
+    if (Platform.OS === 'web') {
+      if (!confirm(confirmMessage)) {
+        return;
+      }
+      
+      (async () => {
+        try {
+          // 1. Supabase 로그아웃
+          await signOut();
+          
+          // 2. 모든 스토어 초기화
+          resetMeal();
+          resetGoal();
+          
+          console.log('✅ 로그아웃 완료, 로그인 화면으로 이동');
+          
+          // 3. 웹에서는 window.location으로 강제 리다이렉트
+          if (typeof window !== 'undefined') {
+            window.location.href = '/auth/login';
+          }
+        } catch (error) {
+          console.error('❌ 로그아웃 처리 실패:', error);
+          alert('로그아웃 중 문제가 발생했습니다.');
+        }
+      })();
+    } else {
+      // 네이티브에서는 Alert 사용
+      Alert.alert(
+        '로그아웃',
+        confirmMessage,
+        [
+          { text: '취소', style: 'cancel' },
+          {
+            text: '로그아웃',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                // 1. Supabase 로그아웃
+                await signOut();
+                
+                // 2. 모든 스토어 초기화
+                resetMeal();
+                resetGoal();
+                
+                console.log('✅ 로그아웃 완료, 로그인 화면으로 이동');
+                
+                // 3. 로그인 화면으로 이동
+                router.replace('/auth/login');
+              } catch (error) {
+                console.error('❌ 로그아웃 처리 실패:', error);
+                Alert.alert('오류', '로그아웃 중 문제가 발생했습니다.');
+              }
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   return (
