@@ -1,26 +1,29 @@
 import { Tabs } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Platform } from 'react-native';
+import { Platform, useWindowDimensions } from 'react-native';
 
 export default function TabLayout() {
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768; // 768px 미만은 모바일로 간주
+
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: '#4CAF50',
         tabBarInactiveTintColor: '#757575',
-        tabBarShowLabel: Platform.OS === 'web' ? true : false, // 모바일에서는 텍스트 숨김
+        tabBarShowLabel: !isMobile, // 모바일에서는 텍스트 숨김
         tabBarLabelStyle: {
-          fontSize: Platform.OS === 'web' ? 11 : 9,
-          marginBottom: Platform.OS === 'web' ? 2 : 0,
-          marginTop: Platform.OS === 'web' ? 0 : -2,
+          fontSize: isMobile ? 9 : 11,
+          marginBottom: isMobile ? 0 : 2,
+          marginTop: isMobile ? -2 : 0,
         },
         tabBarIconStyle: {
-          marginTop: Platform.OS === 'web' ? 0 : 0,
+          marginTop: 0,
         },
         tabBarStyle: {
-          height: Platform.OS === 'web' ? 60 : 60,
-          paddingBottom: Platform.OS === 'web' ? 5 : 5,
-          paddingTop: Platform.OS === 'web' ? 5 : 5,
+          height: 60,
+          paddingBottom: 5,
+          paddingTop: 5,
         },
         headerStyle: {
           backgroundColor: '#4CAF50',
