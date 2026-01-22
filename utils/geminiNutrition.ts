@@ -11,6 +11,14 @@ interface NutritionInfo {
   fat: number;
 }
 
+interface FoodAnalysisResult {
+  foodName: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
 /**
  * Gemini API 클라이언트 초기화
  */
@@ -404,4 +412,131 @@ English:`;
     console.warn(`⚠️ 에러 발생! 원본 사용: "${foodName}"`);
     return foodName;
   }
+}
+
+/**
+ * 이미지에서 음식 정보 분석 (Gemini Vision API)
+ * 
+ * @param imageUri 이미지 URI 또는 Data URL
+ * @returns 음식명, 칼로리, 영양소 정보
+ */
+export async function analyzeFoodImage(imageUri: string): Promise<FoodAnalysisResult | null> {
+  try {
+    const ai = initializeGemini();
+    
+    if (!ai) {
+      console.warn('⚠️ Gemini API 미설정');
+      return null;
+    }
+
+    console.log('🔍 이미지 분석 시작...');
+
+    // Gemini Vision 모델 사용
+    const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+
+    // 이미지 데이터 준비
+    let imageData: string;
+    let mimeType: string = 'image/jpeg';
+
+    if (imageUri.startsWith('data:')) {
+      // Data URL인 경우
+      const parts = imageUri.split(',');
+      const mimeMatch = parts[0].match(/:(.*?);/);
+      if (mimeMatch) {
+        mimeType = mimeMatch[1];
+      }
+      imageData = parts[1];
+    } else if (imageUri.startsWith('http')) {
+      // URL인 경우 fetch로 가져오기
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+      const base64 = await blobToBase64(blob);
+      imageData = base64.split(',')[1];
+      mimeType = blob.type;
+    } else {
+      // 로컬 파일 경로인 경우 (모바일)
+      console.error('❌ 로컬 파일 경로는 웹에서 지원되지 않습니다.');
+      return null;
+    }
+
+    // 프롬프트
+    const prompt = `이 음식 이미지를 분석하여 다음 정보를 JSON 형식으로 제공해주세요:
+
+1. 음식 이름 (한글)
+2. 칼로리 (kcal, 1인분 기준)
+3. 단백질 (g)
+4. 탄수화물 (g)
+5. 지방 (g)
+
+응답 형식 (JSON만):
+{
+  "foodName": "음식명",
+  "calories": 숫자,
+  "protein": 숫자,
+  "carbs": 숫자,
+  "fat": 숫자
+}
+
+주의사항:
+- 반드시 JSON 형식만 반환하세요
+- 음식이 아닌 경우 null 반환
+- 1인분 기준으로 추정
+- 여러 음식이 보이면 가장 주된 음식 분석`;
+
+    // API 호출
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          mimeType,
+          data: imageData,
+        },
+      },
+    ]);
+
+    const response = await result.response;
+    const text = response.text();
+
+    console.log('✅ Gemini Vision 응답:', text);
+
+    // JSON 추출 (마크다운 코드 블록 제거)
+    let jsonText = text.trim();
+    if (jsonText.startsWith('```json')) {
+      jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    } else if (jsonText.startsWith('```')) {
+      jsonText = jsonText.replace(/```\n?/g, '');
+    }
+
+    // JSON 파싱
+    const data = JSON.parse(jsonText);
+
+    if (!data || !data.foodName) {
+      console.warn('⚠️ 음식 정보를 찾을 수 없습니다.');
+      return null;
+    }
+
+    return {
+      foodName: data.foodName,
+      calories: Number(data.calories) || 0,
+      protein: Number(data.protein) || 0,
+      carbs: Number(data.carbs) || 0,
+      fat: Number(data.fat) || 0,
+    };
+
+  } catch (error: any) {
+    console.error('❌ 이미지 분석 실패:', error);
+    return null;
+  }
+}
+
+/**
+ * Blob을 Base64로 변환
+ */
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 }

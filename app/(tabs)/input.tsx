@@ -5,10 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useMealStore } from '../../stores/mealStore';
 import { getTodayDate } from '../../utils/date';
 import { requestImagePermissions, pickImageFromGallery, takePhoto, uploadMealPhoto } from '../../utils/imageUtils';
-import { getNutritionInfo, isGeminiAvailable, translateFoodNameToEnglish } from '../../utils/geminiNutrition';
-import { getFoodImageUrl, getFoodImage } from '../../utils/foodImageUtils';
-import { generateFoodImage } from '../../utils/geminiImageGen';
-import { generateFoodImageWithDALLE, isDALLEAvailable } from '../../utils/dalleImageGen';
+import { isGeminiAvailable, analyzeFoodImage } from '../../utils/geminiNutrition';
 import type { MealType } from '../../types';
 import { Theme } from '../../constants/theme';
 
@@ -136,10 +133,11 @@ export default function InputScreen() {
     setPhotoFile(null);
   };
 
-  // AI로 영양 정보 + 이미지 자동 입력
+  // AI로 이미지에서 음식 정보 자동 입력
   const handleAIApply = async () => {
-    if (!foodName.trim()) {
-      alert('음식 이름을 먼저 입력해주세요!');
+    // 이미지가 없으면 안내
+    if (!photoUri) {
+      alert('📸 먼저 음식 사진을 촬영하거나 선택해주세요!');
       return;
     }
 
@@ -151,94 +149,33 @@ export default function InputScreen() {
     setIsAILoading(true);
 
     try {
-      console.log('🤖 AI 분석 시작: 영양 정보 + 이미지');
+      console.log('🤖 AI 이미지 분석 시작...');
 
-      // 1. 영양 정보 가져오기
-      const nutritionInfo = await getNutritionInfo(foodName.trim());
+      // Gemini Vision API로 이미지 분석
+      const analysisResult = await analyzeFoodImage(photoUri);
 
-      if (!nutritionInfo) {
+      if (!analysisResult) {
         Alert.alert(
-          '영양 정보 없음',
-          '죄송합니다. 해당 음식의 영양 정보를 찾을 수 없습니다.\n\n직접 입력하시거나 비슷한 음식명으로 다시 시도해주세요.',
+          '분석 실패',
+          '이미지에서 음식 정보를 찾을 수 없습니다.\n\n다음을 확인해주세요:\n• 음식이 명확하게 보이는 사진\n• 좋은 조명\n• 가까운 거리\n\n또는 수동으로 입력하세요.',
           [{ text: '확인' }]
         );
         return;
       }
 
-      // 자동으로 폼에 값 입력
-      setCalories(nutritionInfo.calories.toString());
-      setProtein(nutritionInfo.protein.toString());
-      setCarbs(nutritionInfo.carbs.toString());
-      setFat(nutritionInfo.fat.toString());
+      // 분석 결과를 폼에 자동 입력
+      setFoodName(analysisResult.foodName);
+      setCalories(analysisResult.calories.toString());
+      setProtein(analysisResult.protein.toString());
+      setCarbs(analysisResult.carbs.toString());
+      setFat(analysisResult.fat.toString());
       
       // 영양소 섹션 자동으로 열기
       setShowNutrients(true);
 
-      // 2. 이미지 가져오기 (비동기, 실패해도 영양 정보는 유지)
-      try {
-        console.log('🎨 음식 이미지 가져오기 시작...');
-        let imageUrl: string | null = null;
-        let englishFoodName: string | null = null;
+      console.log('✅ 이미지 분석 완료:', analysisResult);
 
-        // 2-0. 한글 음식명을 영어로 번역 (Gemini API)
-        console.log('🌐 음식명 영어 번역 시도...');
-        englishFoodName = await translateFoodNameToEnglish(foodName.trim());
-        
-        if (englishFoodName) {
-          console.log(`✅ 번역 완료: "${foodName}" → "${englishFoodName}"`);
-        } else {
-          console.log(`⚠️ 번역 실패, 원본 사용: "${foodName}"`);
-        }
-
-        // 환경 변수로 AI 이미지 생성 활성화 여부 확인
-        const enableAIImageGen = process.env.EXPO_PUBLIC_ENABLE_AI_IMAGE_GEN === 'true';
-
-        if (enableAIImageGen) {
-          // 2-1. DALL-E 3 이미지 생성 시도 (최우선, 유료)
-          if (isDALLEAvailable()) {
-            console.log('🎨 DALL-E 3 이미지 생성 시도 중... (5-10초 소요)');
-            // 번역된 영어 이름 사용 (프롬프트 품질 향상)
-            const nameForDALLE = englishFoodName || foodName.trim();
-            imageUrl = await generateFoodImageWithDALLE(nameForDALLE);
-            
-            if (imageUrl) {
-              console.log('✅ DALL-E 3 생성 완료!');
-            }
-          }
-
-          // 2-2. Gemini AI 이미지 생성 시도 (폴백, 베타)
-          if (!imageUrl) {
-            console.log('🤖 Gemini AI 이미지 생성 시도 중...');
-            imageUrl = await generateFoodImage(foodName.trim());
-            
-            if (imageUrl) {
-              console.log('✅ Gemini AI 생성 완료!');
-            }
-          }
-        }
-
-        // 2-3. Unsplash API 시도 (실제 사진, 영어 번역 사용)
-        if (!imageUrl) {
-          console.log('📸 Unsplash 검색 시도 중...');
-          imageUrl = await getFoodImageUrl(foodName.trim(), englishFoodName || undefined);
-        }
-        
-        // 2-4. 사전 정의된 이미지 사용 (40개 이상 한국 음식)
-        if (!imageUrl) {
-          console.log('📦 사전 정의된 이미지 사용');
-          imageUrl = getFoodImage(foodName.trim());
-        }
-
-        if (imageUrl) {
-          console.log('✅ 최종 이미지 URL:', imageUrl.substring(0, 60) + '...');
-          setPhotoUri(imageUrl);
-        }
-      } catch (imageError) {
-        console.error('이미지 가져오기 실패 (무시):', imageError);
-        // 이미지 실패는 무시하고 영양 정보는 유지
-      }
-
-      alert(`✅ AI 분석 완료!\n\n칼로리: ${nutritionInfo.calories} kcal\n단백질: ${nutritionInfo.protein}g\n탄수화물: ${nutritionInfo.carbs}g\n지방: ${nutritionInfo.fat}g\n\n${photoUri ? '이미지도 자동으로 추가되었습니다! 📸' : '필요시 사진을 추가해주세요.'}\n\n필요시 수정 후 등록하세요!`);
+      alert(`✅ AI 분석 완료!\n\n음식명: ${analysisResult.foodName}\n칼로리: ${analysisResult.calories} kcal\n단백질: ${analysisResult.protein}g\n탄수화물: ${analysisResult.carbs}g\n지방: ${analysisResult.fat}g\n\n자동으로 입력되었습니다! 📸\n필요시 수정 후 등록하세요!`);
 
     } catch (error: any) {
       console.error('AI 적용 실패:', error);
