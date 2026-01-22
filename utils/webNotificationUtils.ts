@@ -15,10 +15,50 @@ const STORAGE_KEY = 'nutri8_web_notifications';
 let checkInterval: NodeJS.Timeout | null = null;
 
 /**
+ * iOS 감지
+ */
+function isIOS(): boolean {
+  if (typeof window === 'undefined') return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+}
+
+/**
+ * Android 감지
+ */
+function isAndroid(): boolean {
+  if (typeof window === 'undefined') return false;
+  return /Android/.test(navigator.userAgent);
+}
+
+/**
+ * PWA 모드(standalone) 확인
+ */
+function isStandalone(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         (window.navigator as any).standalone === true;
+}
+
+/**
  * 브라우저 알림 지원 확인
  */
 export function isNotificationSupported(): boolean {
-  return 'Notification' in window;
+  if (!('Notification' in window)) {
+    return false;
+  }
+
+  // iOS는 기본적으로 웹 알림을 지원하지 않음
+  if (isIOS()) {
+    console.log('⚠️ iOS는 웹 알림을 지원하지 않습니다.');
+    return false;
+  }
+
+  // Android는 PWA 모드에서만 안정적
+  if (isAndroid() && !isStandalone()) {
+    console.log('⚠️ Android에서는 홈 화면에 추가(PWA)해야 알림이 안정적입니다.');
+  }
+
+  return true;
 }
 
 /**
@@ -222,16 +262,63 @@ export function stopWebNotificationChecker(): void {
  * 테스트 알림 전송
  */
 export async function sendTestNotification(): Promise<void> {
+  // iOS 체크
+  if (isIOS()) {
+    alert(
+      '❌ iOS는 웹 알림을 지원하지 않습니다.\n\n' +
+      '📱 대신 다음 방법을 사용하세요:\n' +
+      '1. 매일 같은 시간에 앱을 확인하는 습관 만들기\n' +
+      '2. 폰의 기본 알람 앱 사용\n' +
+      '3. Android 폰 사용 시 웹 알림 사용 가능'
+    );
+    return;
+  }
+
+  // Android인데 PWA가 아닌 경우
+  if (isAndroid() && !isStandalone()) {
+    const shouldContinue = confirm(
+      '⚠️ 안정적인 알림을 위해 홈 화면에 추가하시겠습니까?\n\n' +
+      '현재 브라우저 탭에서도 알림이 작동할 수 있지만,\n' +
+      '홈 화면에 추가하면 더 안정적입니다.\n\n' +
+      '[확인] = 계속 테스트\n' +
+      '[취소] = 홈 화면 추가 방법 보기'
+    );
+
+    if (!shouldContinue) {
+      alert(
+        '📱 홈 화면에 추가하는 방법:\n\n' +
+        '1. 우측 상단 ⋮ (메뉴) 클릭\n' +
+        '2. "홈 화면에 추가" 선택\n' +
+        '3. "추가" 클릭\n\n' +
+        '추가 후 홈 화면의 Nutri8 아이콘으로 실행하세요!'
+      );
+      return;
+    }
+  }
+
   const hasPermission = await requestWebNotificationPermission();
   
   if (!hasPermission) {
-    alert('알림 권한이 필요합니다. 브라우저 설정에서 알림을 허용해주세요.');
+    alert(
+      '❌ 알림 권한이 필요합니다.\n\n' +
+      '📱 Android Chrome:\n' +
+      '1. 주소창 왼쪽 자물쇠 아이콘 터치\n' +
+      '2. "권한" 터치\n' +
+      '3. "알림" → "허용" 선택\n\n' +
+      '또는\n' +
+      '설정 → 사이트 설정 → 알림 → 허용'
+    );
     return;
   }
 
   sendWebNotification(
     '✅ 테스트 알림',
-    'Nutri8 웹 알림이 정상 작동합니다!',
+    'Nutri8 웹 알림이 정상 작동합니다! 🎉',
     'test'
   );
+
+  // 성공 메시지
+  setTimeout(() => {
+    alert('✅ 테스트 알림을 전송했습니다!\n\n알림이 보이지 않으면 브라우저 설정을 확인해주세요.');
+  }, 500);
 }

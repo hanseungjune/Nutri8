@@ -13,6 +13,7 @@ import {
   saveWebNotificationSettings,
   loadWebNotificationSettings,
   sendTestNotification,
+  isNotificationSupported,
   type WebNotificationSettings,
 } from '../../utils/webNotificationUtils';
 import { Card } from '../../components/common/Card';
@@ -170,10 +171,41 @@ export default function NotificationsScreen() {
     snack: '간식',
   };
 
+  // iOS 체크
+  const isIOS = Platform.OS === 'ios' || (Platform.OS === 'web' && /iPad|iPhone|iPod/.test(navigator.userAgent));
+  const isWebNotSupported = Platform.OS === 'web' && !isNotificationSupported();
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>알림 설정</Text>
+
+        {/* 모바일 안내 메시지 */}
+        {isIOS && (
+          <Card style={[styles.warningCard, { backgroundColor: '#FFF3CD' }]}>
+            <Text style={[styles.warningTitle, { color: '#856404' }]}>⚠️ iOS 알림 제한</Text>
+            <Text style={[styles.warningText, { color: '#856404' }]}>
+              iOS(iPhone/iPad)는 웹 알림을 지원하지 않습니다.{'\n\n'}
+              📱 대신 다음 방법을 사용하세요:{'\n'}
+              • 폰의 기본 알람 앱 사용{'\n'}
+              • 매일 같은 시간에 앱 확인 습관{'\n'}
+              • Android 기기에서는 알림 가능
+            </Text>
+          </Card>
+        )}
+
+        {isWebNotSupported && !isIOS && (
+          <Card style={[styles.warningCard, { backgroundColor: '#D1ECF1' }]}>
+            <Text style={[styles.warningTitle, { color: '#0C5460' }]}>💡 안정적인 알림을 위해</Text>
+            <Text style={[styles.warningText, { color: '#0C5460' }]}>
+              홈 화면에 추가하면 더 안정적으로 알림을 받을 수 있습니다!{'\n\n'}
+              📱 추가 방법:{'\n'}
+              1. 브라우저 메뉴 (⋮) 열기{'\n'}
+              2. "홈 화면에 추가" 선택{'\n'}
+              3. 홈 화면의 Nutri8 아이콘으로 실행
+            </Text>
+          </Card>
+        )}
 
         {/* 메인 토글 */}
         <Card style={styles.mainCard}>
@@ -279,6 +311,19 @@ const styles = StyleSheet.create({
     fontWeight: Theme.typography.fontWeight.bold,
     color: Theme.colors.text.primary,
     marginBottom: Theme.spacing.xl,
+  },
+  warningCard: {
+    marginBottom: Theme.spacing.md,
+    padding: Theme.spacing.base,
+  },
+  warningTitle: {
+    fontSize: Theme.typography.fontSize.lg,
+    fontWeight: Theme.typography.fontWeight.bold,
+    marginBottom: Theme.spacing.xs,
+  },
+  warningText: {
+    fontSize: Theme.typography.fontSize.sm,
+    lineHeight: 20,
   },
   mainCard: {
     marginBottom: Theme.spacing.md,
