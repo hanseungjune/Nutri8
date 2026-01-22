@@ -178,7 +178,7 @@ export default function InputScreen() {
       alert(`✅ AI 분석 완료!\n\n음식명: ${analysisResult.foodName}\n칼로리: ${analysisResult.calories} kcal\n단백질: ${analysisResult.protein}g\n탄수화물: ${analysisResult.carbs}g\n지방: ${analysisResult.fat}g\n\n자동으로 입력되었습니다! 📸\n필요시 수정 후 등록하세요!`);
 
     } catch (error: any) {
-      console.error('AI 적용 실패:', error);
+      console.error('AI 분석 실패:', error);
       
       // Quota 초과 에러 체크
       const isQuotaError = error?.message?.includes('quota') || 
@@ -187,14 +187,30 @@ export default function InputScreen() {
       
       if (isQuotaError) {
         Alert.alert(
-          '일일 할당량 초과',
-          'Gemini API 무료 할당량(하루 20번)을 초과했습니다.\n\n✅ 걱정하지 마세요!\n오프라인 데이터베이스에 100개 이상의 음식 정보가 저장되어 있습니다.\n\n다시 시도하거나, 직접 영양 정보를 입력해주세요.',
-          [{ text: '확인' }]
+          '⏰ AI 할당량 초과',
+          'Gemini API 무료 할당량(하루 20번)을 초과했습니다.\n\n' +
+          '💡 해결 방법:\n\n' +
+          '1️⃣ 수동 입력 (AI 없이도 완벽 작동!)\n' +
+          '   • 음식명 직접 입력\n' +
+          '   • 칼로리/영양소 직접 입력\n\n' +
+          '2️⃣ 내일까지 기다리기\n' +
+          '   • 매일 자정(UTC) 자동 리셋\n\n' +
+          '3️⃣ 유료 플랜 업그레이드\n' +
+          '   • Google AI Studio에서 설정\n' +
+          '   • 하루 1,500번 사용 가능',
+          [{ text: '확인, 수동 입력할게요' }]
         );
       } else {
         Alert.alert(
-          'AI 분석 오류',
-          'AI 분석 중 오류가 발생했습니다.\n\n✅ 오프라인 데이터베이스를 확인하거나\n✅ 직접 영양 정보를 입력해주세요.',
+          '❌ AI 분석 실패',
+          '이미지 분석 중 오류가 발생했습니다.\n\n' +
+          '가능한 원인:\n' +
+          '• 음식이 명확하게 보이지 않음\n' +
+          '• 이미지가 너무 어둡거나 흐림\n' +
+          '• 네트워크 연결 문제\n\n' +
+          '💡 해결책:\n' +
+          '• 더 선명한 사진으로 다시 시도\n' +
+          '• 또는 수동으로 정보 입력',
           [{ text: '확인' }]
         );
       }
@@ -390,28 +406,7 @@ export default function InputScreen() {
         </View>
 
         <View style={styles.section}>
-          <View style={styles.labelRow}>
-            <Text style={styles.label}>음식명</Text>
-            {isGeminiAvailable() && (
-              <TouchableOpacity
-                style={styles.aiButton}
-                onPress={handleAIApply}
-                disabled={isAILoading || !foodName.trim()}
-              >
-                {isAILoading ? (
-                  <>
-                    <ActivityIndicator size="small" color="#fff" />
-                    <Text style={styles.aiButtonText}>AI 분석 중...</Text>
-                  </>
-                ) : (
-                  <>
-                    <MaterialCommunityIcons name="robot" size={18} color="#fff" />
-                    <Text style={styles.aiButtonText}>AI 적용 🤖</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            )}
-          </View>
+          <Text style={styles.label}>음식명</Text>
           <TextInput
             style={styles.input}
             placeholder="예: 김치찌개"
@@ -457,6 +452,32 @@ export default function InputScreen() {
             <View style={styles.uploadingContainer}>
               <ActivityIndicator size="small" color={Theme.colors.primary} />
               <Text style={styles.uploadingText}>사진 업로드 중...</Text>
+            </View>
+          )}
+
+          {/* AI 분석 버튼 (사진이 있을 때만 표시) */}
+          {photoUri && isGeminiAvailable() && (
+            <View style={{ marginTop: 16 }}>
+              <TouchableOpacity
+                style={[styles.aiAnalysisButton, isAILoading && styles.aiAnalysisButtonDisabled]}
+                onPress={handleAIApply}
+                disabled={isAILoading}
+              >
+                {isAILoading ? (
+                  <>
+                    <ActivityIndicator size="small" color="#fff" />
+                    <Text style={styles.aiAnalysisButtonText}>AI 분석 중...</Text>
+                  </>
+                ) : (
+                  <>
+                    <MaterialCommunityIcons name="robot" size={24} color="#fff" />
+                    <Text style={styles.aiAnalysisButtonText}>🤖 AI로 음식 정보 자동 입력</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+              <Text style={styles.aiHintText}>
+                💡 사진을 분석하여 음식명, 칼로리, 영양소를 자동으로 입력합니다
+              </Text>
             </View>
           )}
         </View>
@@ -724,6 +745,36 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 13,
     fontWeight: '600',
+  },
+  aiAnalysisButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#8B5CF6',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  aiAnalysisButtonDisabled: {
+    backgroundColor: '#A78BFA',
+  },
+  aiAnalysisButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  aiHintText: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 16,
   },
   dateButtonContainer: {
     flexDirection: 'row',
